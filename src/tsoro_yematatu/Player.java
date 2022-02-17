@@ -40,10 +40,11 @@ public class Player extends JFrame {
 	private int turnsMade;
 	
 	private int[] myPoints;
-//	private int[] enemyPoints;
+	private int[] enemyPoints;
 	private boolean buttonsEnabled;
 	
 	private int piecesUsed;
+	private int enemyPieces;
 	
 	private ClientSideConnection clientSideConnection;
 	
@@ -64,9 +65,10 @@ public class Player extends JFrame {
 		this.values = new ArrayList<Integer>();
 		this.turnsMade = 0;
 		this.myPoints = new int[3];
-//		this.enemyPoints = new int[7];
+		this.enemyPoints = new int[3];
 		
 		this.piecesUsed = 0;
+		this.enemyPieces = 0;
 	}
 	
 	public void setUpGUI() {
@@ -136,7 +138,7 @@ public class Player extends JFrame {
 				
 				if (piecesUsed < 3) {
 					myPoints[piecesUsed] = bNum;
-					System.out.println("My points: " + Arrays.toString(myPoints));	
+//					System.out.println("My points: " + Arrays.toString(myPoints));	
 					
 					piecesUsed++;
 				}
@@ -168,8 +170,19 @@ public class Player extends JFrame {
 	}
 	
 	public void toggleButtons() {
+		System.out.println("My pieces: " + Arrays.toString(myPoints));
+		System.out.println("Enemy pieces: " + Arrays.toString(enemyPoints));
+		
 		for (int i = 0; i < buttons.length; i++) {
 			buttons[i].setEnabled(buttonsEnabled);
+			
+			for (int j = 0; j < myPoints.length; j++) {
+				if (buttons[i].getText().contentEquals(String.valueOf(myPoints[j])) ||
+						buttons[i].getText().contentEquals(String.valueOf(enemyPoints[j]))) {
+					buttons[i].setEnabled(false);
+				}
+				
+			}
 		}
 	}
 	
@@ -180,6 +193,14 @@ public class Player extends JFrame {
 //		enemyPoints += values[n-1];
 		
 //		System.out.println("Your enemy has " + enemyPoints + " points.");
+		
+		
+		if (enemyPieces < 3) {
+			enemyPoints[enemyPieces] = n;
+//			System.out.println("Enemy points: " + Arrays.toString(enemyPoints));	
+			
+			enemyPieces++;
+		}
 		
 		//TODO
 		if (playerID == 1 && turnsMade == 10) {
@@ -267,7 +288,7 @@ public class Player extends JFrame {
 			
 			try {
 				n = dataIn.readInt();
-				System.out.println("Player #" + otherPlayer + " clicked button #" + n);
+//				System.out.println("Player #" + otherPlayer + " clicked button #" + n);
 			}
 			catch (IOException e) {
 				System.out.println("IO Exception - receiveButtonNum()");
