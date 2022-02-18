@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -24,27 +25,21 @@ public class Player extends JFrame {
 	private Container contentPane;
 	private JTextArea message;
 	private JButton[] buttons = new JButton[7];
-//	private JButton b1;
-//	private JButton b2;
-//	private JButton b3;
-//	private JButton b4;
-//	private JButton b5;
-//	private JButton b6;
-//	private JButton b7;
 	
 	private int playerID;
 	private int otherPlayer;
 	
-	private ArrayList<Integer> values;
-//	private int maxTurns;
 	private int turnsMade;
 	
-	private int[] myPoints;
-	private int[] enemyPoints;
+	private Integer[] myPoints;
+	private Integer[] enemyPoints;
 	private boolean buttonsEnabled;
 	
 	private int piecesUsed;
 	private int enemyPieces;
+		
+	private List<Integer[]> segments;
+	protected boolean winner;
 	
 	private ClientSideConnection clientSideConnection;
 	
@@ -62,13 +57,15 @@ public class Player extends JFrame {
 		this.buttons[5] = new JButton("6");
 		this.buttons[6] = new JButton("7");
 		
-		this.values = new ArrayList<Integer>();
 		this.turnsMade = 0;
-		this.myPoints = new int[3];
-		this.enemyPoints = new int[3];
+		this.myPoints = new Integer[3];
+		this.enemyPoints = new Integer[3];
 		
 		this.piecesUsed = 0;
 		this.enemyPieces = 0;
+		
+		this.segments = getSegmentsList();
+		this.winner = false;
 	}
 	
 	public void setUpGUI() {
@@ -133,23 +130,16 @@ public class Player extends JFrame {
 				buttonsEnabled = false;				
 				toggleButtons();				
 				
-//				myPoints += values[bNum - 1];
-//				System.out.println("My points: " + myPoints);
-				
 				if (piecesUsed < 3) {
-					myPoints[piecesUsed] = bNum;
-//					System.out.println("My points: " + Arrays.toString(myPoints));	
-					
+					myPoints[piecesUsed] = bNum;					
 					piecesUsed++;
 				}
  				
 				clientSideConnection.sendButtonNum(bNum);
 				
-				//TODO
-				if (playerID == 2 && turnsMade == 10) {
-					checkWinner();
-				}
-				else {
+				checkWinner();
+				
+				if (winner == false) {
 					Thread t = new Thread(new Runnable() {
 						public void run() {
 							updateTurn();
@@ -170,9 +160,6 @@ public class Player extends JFrame {
 	}
 	
 	public void toggleButtons() {
-		System.out.println("My pieces: " + Arrays.toString(myPoints));
-		System.out.println("Enemy pieces: " + Arrays.toString(enemyPoints));
-		
 		for (int i = 0; i < buttons.length; i++) {
 			buttons[i].setEnabled(buttonsEnabled);
 			
@@ -188,49 +175,47 @@ public class Player extends JFrame {
 	
 	public void updateTurn() {
 		int n = clientSideConnection.receiveButtonNum();
-			
-//		message.setText("Your enemy clicked button #" + n + ". Your turn.");
-//		enemyPoints += values[n-1];
-		
-//		System.out.println("Your enemy has " + enemyPoints + " points.");
-		
 		
 		if (enemyPieces < 3) {
-			enemyPoints[enemyPieces] = n;
-//			System.out.println("Enemy points: " + Arrays.toString(enemyPoints));	
-			
+			enemyPoints[enemyPieces] = n;			
 			enemyPieces++;
 		}
 		
-		//TODO
-		if (playerID == 1 && turnsMade == 10) {
-			checkWinner();
-		}
-		else {
-			buttonsEnabled = true;
-		}
+		checkWinner();
+		buttonsEnabled = true;
 
 		toggleButtons();
 	}
 	
 	private void checkWinner() {
-		buttonsEnabled = false;
+		for (Integer[] segment : segments) {			
+			if (Arrays.asList(segment).containsAll(Arrays.asList(myPoints))) {
+				buttonsEnabled = false;
+				winner = true;
+				
+				System.out.println("You WIN!");
+				clientSideConnection.closeConnection();
+			}
+		}		
+	}
+	
+	
+	private List<Integer[]> getSegmentsList() {
+		List<Integer[]> segments = new ArrayList<Integer[]>();
 		
-//		if (myPoints > enemyPoints) {
-//			message.setText("You WON!\n" 
-//					+ "YOU: " + myPoints + "\n" 
-//					+ "ENEMY: " + enemyPoints);
-//		}
-//		else if (myPoints < enemyPoints) {
-//			message.setText("You LOST!\n" 
-//					+ "YOU: " + myPoints + "\n" 
-//					+ "ENEMY: " + enemyPoints);
-//		}
-//		else {
-//			message.setText("It's a tie! You both got " + myPoints + " points.");
-//		}
+		Integer[] horizontal1 = {2, 3, 4};
+		Integer[] horizontal2 = {5, 6, 7};
+		Integer[] diagonal1 = {1, 2, 5};
+		Integer[] diagonal2 = {1, 4, 7};
+		Integer[] vertical = {1, 3, 6};
 		
-		clientSideConnection.closeConnection();
+		segments.add(horizontal1);
+		segments.add(horizontal2);
+		segments.add(diagonal1);
+		segments.add(diagonal2);
+		segments.add(vertical);
+		
+		return segments;
 	}
 	
 	// Client Connection Inner Class
@@ -249,24 +234,6 @@ public class Player extends JFrame {
 				
 				playerID = dataIn.readInt();
 				System.out.println("Connected to server as Player #" + playerID + ".");
-				
-//				maxTurns = dataIn.readInt() / 2;
-//				values[0] = dataIn.readInt();
-//				values[1] = dataIn.readInt();
-//				values[2] = dataIn.readInt();
-//				values[3] = dataIn.readInt();
-//				values[4] = dataIn.readInt();
-//				values[5] = dataIn.readInt();
-//				values[6] = dataIn.readInt();
-				
-//				System.out.println("maxTurns: " + maxTurns);
-//				System.out.println("Value # 1 is " + values[0]);
-//				System.out.println("Value # 2 is " + values[1]);
-//				System.out.println("Value # 3 is " + values[2]);
-//				System.out.println("Value # 4 is " + values[3]);
-//				System.out.println("Value # 5 is " + values[4]);
-//				System.out.println("Value # 6 is " + values[5]);
-//				System.out.println("Value # 7 is " + values[6]);
 			}
 			catch (IOException e) {
 				System.out.println("IOException - ClientSideConnection()");
@@ -288,7 +255,6 @@ public class Player extends JFrame {
 			
 			try {
 				n = dataIn.readInt();
-//				System.out.println("Player #" + otherPlayer + " clicked button #" + n);
 			}
 			catch (IOException e) {
 				System.out.println("IO Exception - receiveButtonNum()");
