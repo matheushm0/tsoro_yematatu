@@ -16,6 +16,18 @@ public class Server
 	
 	private int player1ButtonNum;
 	private int player2ButtonNum;
+	
+	private int player1UpdatedPoints0;
+	private int player1UpdatedPoints1;
+	private int player1UpdatedPoints2;
+	
+	private int player2UpdatedPoints0;
+	private int player2UpdatedPoints1;
+	private int player2UpdatedPoints2;
+	
+	private boolean player1UpdateFlag;
+	private boolean player2UpdateFlag;
+
 	 	
 	public Server() {
 		System.out.println("----Iniciando Servidor----");
@@ -88,17 +100,37 @@ public class Server
 				while (true) {
 					if (playerID == 1) {
 						player1ButtonNum = dataIn.readInt();
+						player1UpdateFlag = dataIn.readBoolean();
 
 						System.out.println("Player 1 clicked button #" + player1ButtonNum);
 						player2.sendButtonNum(player1ButtonNum);
+						player2.sendUpdateArrayFlag(player1UpdateFlag);
+						
+						
+						if (player1UpdateFlag == true) {
+							player1UpdatedPoints0 = dataIn.readInt();
+							player1UpdatedPoints1 = dataIn.readInt();
+							player1UpdatedPoints2 = dataIn.readInt();
+
+							player2.sendUpdatedPoints(player1UpdatedPoints0, player1UpdatedPoints1, player1UpdatedPoints2);
+						}
 
 					} 
 					else {
 						player2ButtonNum = dataIn.readInt();
+						player2UpdateFlag = dataIn.readBoolean();
 
 						System.out.println("Player 2 clicked button #" + player2ButtonNum);
 						player1.sendButtonNum(player2ButtonNum);
+						player1.sendUpdateArrayFlag(player2UpdateFlag);
+						
+						if (player2UpdateFlag == true) {
+							player2UpdatedPoints0 = dataIn.readInt();
+							player2UpdatedPoints1 = dataIn.readInt();
+							player2UpdatedPoints2 = dataIn.readInt();
 
+							player1.sendUpdatedPoints(player2UpdatedPoints0, player2UpdatedPoints1, player2UpdatedPoints2);
+						}
 					}
 				}
 			}
@@ -114,6 +146,28 @@ public class Server
 			}
 			catch (IOException e) {
 				System.out.println("IOException - sendButtonNum()");
+			}
+		}
+		
+		public void sendUpdatedPoints (int n0, int n1, int n2) {
+			try {
+				dataOut.writeInt(n0);
+				dataOut.writeInt(n1);
+				dataOut.writeInt(n2);
+				dataOut.flush();
+			}
+			catch (IOException e) {
+				System.out.println("IO Exception - sendUpdatedPoints()");
+			}
+		}
+		
+		public void sendUpdateArrayFlag (boolean updateArray) {
+			try {
+				dataOut.writeBoolean(updateArray);
+				dataOut.flush();
+			}
+			catch (IOException e) {
+				System.out.println("IO Exception - sendUpdateArrayFlag()");
 			}
 		}
 		
