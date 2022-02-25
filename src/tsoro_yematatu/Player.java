@@ -1,24 +1,27 @@
 package tsoro_yematatu;
 
-import java.awt.Container;
-import java.awt.GridLayout;
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JTextArea;
 
 public class Player extends JFrame {
 	private static final long serialVersionUID = 1L;
 	
-	private int width;
-	private int height;
+	private JLabel displayField;
+	private ImageIcon image;
+	private ImageIcon defaultImage;
+	private ImageIcon player1Image;
+	private ImageIcon player2Image;
 	
-	private Container contentPane;
 	private JTextArea message;
 	private JButton[] buttons = new JButton[7];
 	
@@ -36,67 +39,144 @@ public class Player extends JFrame {
 	private int enemyPieces;
 		
 	private List<Integer[]> segments;
-	protected boolean winner;
 	
 	private ClientSideConnection clientSideConnection;
 	
-	public Player(int width, int height) {
-		this.width = width;
-		this.height = height;
-		
-		this.contentPane = this.getContentPane();
+	public Player() {
 		this.message = new JTextArea();
-		this.buttons[0] = new JButton("0");
-		this.buttons[1] = new JButton("1");
-		this.buttons[2] = new JButton("2");
-		this.buttons[3] = new JButton("3");
-		this.buttons[4] = new JButton("4");
-		this.buttons[5] = new JButton("5");
-		this.buttons[6] = new JButton("6");
+		this.buttons[0] = new JButton();
+		this.buttons[1] = new JButton();
+		this.buttons[2] = new JButton();
+		this.buttons[3] = new JButton();
+		this.buttons[4] = new JButton();
+		this.buttons[5] = new JButton();
+		this.buttons[6] = new JButton();
+
+		this.image = new ImageIcon(this.getClass().getResource("/resources/images/board.png"));
 		
+		this.defaultImage = new ImageIcon(this.getClass().getResource("/resources/images/defaultImage.png"));
+		this.player1Image = new ImageIcon(this.getClass().getResource("/resources/images/player1.png"));
+		this.player2Image = new ImageIcon(this.getClass().getResource("/resources/images/player2.png"));
+		
+		this.displayField = new JLabel();
+
 		this.turnsMade = 0;
 		this.myPoints = new Integer[3];
 		this.enemyPoints = new Integer[3];
 		this.allPoints = new Integer[7];
-		
+
 		this.piecesUsed = 0;
 		this.enemyPieces = 0;
-		
+
 		this.segments = getSegmentsList();
-		this.winner = false;
 	}
-	
+
 	public void setUpGUI() {
-		this.setSize(width, height);
-		this.setTitle("Player #" + clientSideConnection.getPlayerID());
+		this.setResizable(false);
+		this.setBackground(Color.WHITE);
+		this.setSize(700, 700);
+		this.setTitle("Tsoro Yematatu - Player #" + clientSideConnection.getPlayerID());
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+		displayField.setIcon(image);
+		this.setContentPane(displayField);
+
+		buttons[0].setBounds(290, 40, 80, 80);
+		buttons[0].setOpaque(false);
+		buttons[0].setContentAreaFilled(false);
+		buttons[0].setBorderPainted(false);
+		buttons[0].setFocusable(false);
+		buttons[0].setIcon(defaultImage);
+		buttons[0].setDisabledIcon(defaultImage);
+		buttons[0].setForeground(Color.WHITE);
+		buttons[0].setActionCommand("0");
+
+		buttons[1].setBounds(148, 327, 80, 80);
+		buttons[1].setOpaque(false);
+		buttons[1].setContentAreaFilled(false);
+		buttons[1].setBorderPainted(false);
+		buttons[1].setFocusable(false);
+		buttons[1].setIcon(defaultImage);
+		buttons[1].setDisabledIcon(defaultImage);
+		buttons[1].setForeground(Color.BLACK);
+		buttons[1].setActionCommand("1");
 		
-		contentPane.setLayout(new GridLayout(1, 8));
-		contentPane.add(message);
-		
-		message.setText("Creating a simple turn-based game in Java.");
+		buttons[2].setBounds(290, 327, 80, 80);
+		buttons[2].setOpaque(false);
+		buttons[2].setContentAreaFilled(false);
+		buttons[2].setBorderPainted(false);
+		buttons[2].setFocusable(false);
+		buttons[2].setIcon(defaultImage);
+		buttons[2].setDisabledIcon(defaultImage);
+		buttons[2].setForeground(Color.BLACK);
+		buttons[2].setActionCommand("2");
+
+		buttons[3].setBounds(448, 327, 80, 80);
+		buttons[3].setOpaque(false);
+		buttons[3].setContentAreaFilled(false);
+		buttons[3].setBorderPainted(false);
+		buttons[3].setFocusable(false);
+		buttons[3].setIcon(defaultImage);
+		buttons[3].setDisabledIcon(defaultImage);
+		buttons[3].setForeground(Color.WHITE);
+		buttons[3].setActionCommand("3");
+
+		buttons[4].setBounds(46, 540, 80, 80);
+		buttons[4].setOpaque(false);
+		buttons[4].setContentAreaFilled(false);
+		buttons[4].setBorderPainted(false);
+		buttons[4].setFocusable(false);
+		buttons[4].setIcon(defaultImage);
+		buttons[4].setDisabledIcon(defaultImage);
+		buttons[4].setForeground(Color.WHITE);
+		buttons[4].setActionCommand("4");
+
+		buttons[5].setBounds(290, 540, 80, 80);
+		buttons[5].setOpaque(false);
+		buttons[5].setContentAreaFilled(false);
+		buttons[5].setBorderPainted(false);
+		buttons[5].setFocusable(false);
+		buttons[5].setIcon(defaultImage);
+		buttons[5].setDisabledIcon(defaultImage);
+		buttons[5].setForeground(Color.WHITE);
+		buttons[5].setActionCommand("5");
+
+		buttons[6].setBounds(557, 540, 80, 80);
+		buttons[6].setOpaque(false);
+		buttons[6].setContentAreaFilled(false);
+		buttons[6].setBorderPainted(false);
+		buttons[6].setFocusable(false);
+		buttons[6].setIcon(defaultImage);
+		buttons[6].setDisabledIcon(defaultImage);
+		buttons[6].setForeground(Color.WHITE);
+		buttons[6].setActionCommand("6");
+
+		this.add(buttons[0]);
+		this.add(buttons[1]);
+		this.add(buttons[2]);
+		this.add(buttons[3]);
+		this.add(buttons[4]);
+		this.add(buttons[5]);
+		this.add(buttons[6]);
+
+		message.setBounds(200, 10, 400, 30);
 		message.setWrapStyleWord(true);
 		message.setLineWrap(true);
 		message.setEditable(false);
+		message.setFont(message.getFont().deriveFont(15f));
 		
-		contentPane.add(buttons[0]);
-		contentPane.add(buttons[1]);
-		contentPane.add(buttons[2]);
-		contentPane.add(buttons[3]);
-		contentPane.add(buttons[4]);
-		contentPane.add(buttons[5]);
-		contentPane.add(buttons[6]);
-		
+		this.add(message);
+
 		if (clientSideConnection.getPlayerID() == 1) {
 			message.setText("You are player #1. You go first.");
-			otherPlayer = 2;
+			otherPlayer = 2;			
 			buttonsEnabled = true;
-		}
+		} 
 		else {
 			message.setText("You are player #2. Wait for your turn");
-			otherPlayer = 1;
+			otherPlayer = 1;			
 			buttonsEnabled = false;
-			
+
 			Thread t = new Thread(new Runnable() {
 				public void run() {
 					updateTurn();
@@ -104,9 +184,9 @@ public class Player extends JFrame {
 			});
 			t.start();
 		}
-		
+
 		toggleButtons();
-		
+
 		this.setVisible(true);
 	}
 	
@@ -119,7 +199,7 @@ public class Player extends JFrame {
 		{
 			public void actionPerformed(ActionEvent ae) {
 				JButton b = (JButton) ae.getSource();
-				int bNum = Integer.parseInt(b.getText());
+				int bNum = Integer.parseInt(b.getActionCommand());
 				
 				message.setText("You clicked button #" + bNum + ". Now wait for player #" + otherPlayer);
 				
@@ -143,14 +223,12 @@ public class Player extends JFrame {
 					clientSideConnection.sendUpdateArrayFlag(false);
 				}
 												
-				if (winner == false) {
-					Thread t = new Thread(new Runnable() {
-						public void run() {
-							updateTurn();
-						}
-					});
-					t.start();
-				}
+				Thread t = new Thread(new Runnable() {
+					public void run() {
+						updateTurn();
+					}
+				});
+				t.start();
 			}
 		};
 		
@@ -164,7 +242,6 @@ public class Player extends JFrame {
 	}
 
 	public void toggleButtons() {
-
 		for (int i = 0; i < buttons.length; i++) {
 			buttons[i].setEnabled(buttonsEnabled);
 
@@ -175,11 +252,40 @@ public class Player extends JFrame {
 
 				if (allPoints[i] == null) {
 					buttons[i].setEnabled(false);
+					buttons[i].setDisabledIcon(defaultImage);
 				}
 			} 
 			else {
 				if (allPoints[i] != null) {
 					buttons[i].setEnabled(false);
+				}
+			}
+		}
+		
+		setButtonColor();
+	}
+	
+	public void setButtonColor() {
+		for (int i = 0; i < enemyPoints.length; i++) {
+			if (clientSideConnection.getPlayerID() == 1) {
+				if (myPoints[i] != null) {
+					buttons[myPoints[i]].setIcon(player1Image);
+					buttons[myPoints[i]].setDisabledIcon(player1Image);
+				}
+
+				if (enemyPoints[i] != null) {
+					buttons[enemyPoints[i]].setDisabledIcon(player2Image);
+				}
+			}
+
+			if (clientSideConnection.getPlayerID() == 2) {
+				if (myPoints[i] != null) {
+					buttons[myPoints[i]].setIcon(player2Image);
+					buttons[myPoints[i]].setDisabledIcon(player2Image);
+				}
+
+				if (enemyPoints[i] != null) {
+					buttons[enemyPoints[i]].setDisabledIcon(player1Image);
 				}
 			}
 		}
@@ -279,9 +385,8 @@ public class Player extends JFrame {
 		for (Integer[] segment : segments) {			
 			if (Arrays.asList(segment).containsAll(Arrays.asList(myPoints))) {
 				buttonsEnabled = false;
-				winner = true;
 				
-				System.out.println("You WIN!");
+				message.setText("You WIN!");
 				clientSideConnection.closeConnection();
 			}
 		}		
@@ -307,7 +412,7 @@ public class Player extends JFrame {
 	}
 	
 	public static void main(String[] args) {
-		Player p = new Player(500, 100);
+		Player p = new Player();
 		p.connectToServer();
 		p.setUpGUI();
 		p.setUpButtons();
