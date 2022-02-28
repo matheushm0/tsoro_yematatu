@@ -14,6 +14,9 @@ public class Server
 	private ServerSideConnection player1;
 	private ServerSideConnection player2;
 	
+	private String player1Message;
+	private String player2Message;
+	
 	private int player1ButtonNum;
 	private int player2ButtonNum;
 	
@@ -101,6 +104,9 @@ public class Server
 					if (playerID == 1) {
 						player1ButtonNum = dataIn.readInt();
 						player1UpdateFlag = dataIn.readBoolean();
+						player1Message = dataIn.readUTF();
+						
+						System.out.println("Player1: " + player1Message);
 
 						System.out.println("Player 1 clicked button #" + player1ButtonNum);
 						player2.sendButtonNum(player1ButtonNum);
@@ -119,6 +125,9 @@ public class Server
 					else {
 						player2ButtonNum = dataIn.readInt();
 						player2UpdateFlag = dataIn.readBoolean();
+						player2Message = dataIn.readUTF();
+						
+						System.out.println("Player2: " + player2Message);
 
 						System.out.println("Player 2 clicked button #" + player2ButtonNum);
 						player1.sendButtonNum(player2ButtonNum);
@@ -136,6 +145,16 @@ public class Server
 			}
 			catch (IOException e) {
 				System.out.println("IOException - run() SSC");
+			}
+		}
+		
+		public void sendMessage(String message) {
+			try {
+				dataOut.writeUTF(message);
+				dataOut.flush();
+			}
+			catch (IOException e) {
+				System.out.println("IO Exception - sendMessage()");
 			}
 		}
 		

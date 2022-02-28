@@ -29,6 +29,16 @@ public class ClientSideConnection {
 		}
 	}
 	
+	public void sendMessage(String message) {
+		try {
+			dataOut.writeUTF(message);
+			dataOut.flush();
+		}
+		catch (IOException e) {
+			System.out.println("IO Exception - sendMessage()");
+		}
+	}
+	
 	public void sendButtonNum (int n) {
 		try {
 			dataOut.writeInt(n);

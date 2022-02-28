@@ -11,7 +11,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 
 public class Player extends JFrame {
 	private static final long serialVersionUID = 1L;
@@ -24,6 +26,11 @@ public class Player extends JFrame {
 	
 	private JTextArea message;
 	private JButton[] buttons = new JButton[7];
+	
+	private JTextArea chatArea;
+	private JButton chatButton;
+	private JScrollPane chatScrollPane;
+	private JTextField chatTextField;
 	
 	private int otherPlayer;
 	
@@ -42,7 +49,7 @@ public class Player extends JFrame {
 	
 	private ClientSideConnection clientSideConnection;
 	
-	public Player() {
+	public Player() {		
 		this.message = new JTextArea();
 		this.buttons[0] = new JButton();
 		this.buttons[1] = new JButton();
@@ -51,6 +58,11 @@ public class Player extends JFrame {
 		this.buttons[4] = new JButton();
 		this.buttons[5] = new JButton();
 		this.buttons[6] = new JButton();
+		
+		this.chatArea = new JTextArea();
+		this.chatButton = new JButton();
+		this.chatScrollPane = new JScrollPane();
+		this.chatTextField = new JTextField();
 
 		this.image = new ImageIcon(this.getClass().getResource("/resources/images/board.png"));
 		
@@ -74,7 +86,7 @@ public class Player extends JFrame {
 	public void setUpGUI() {
 		this.setResizable(false);
 		this.setBackground(Color.WHITE);
-		this.setSize(700, 700);
+		this.setSize(1300, 700);
 		this.setTitle("Tsoro Yematatu - Player #" + clientSideConnection.getPlayerID());
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -166,7 +178,22 @@ public class Player extends JFrame {
 		message.setFont(message.getFont().deriveFont(15f));
 		
 		this.add(message);
+		
+		//set up chat
+		chatTextField.setBounds(700, 550, 410, 40);
 
+		chatButton.setText("Send");
+		chatButton.setBounds(1110, 550, 80, 39);
+		
+		chatArea.setColumns(20);
+		chatArea.setRows(5);
+		chatScrollPane.setViewportView(chatArea);
+		chatScrollPane.setBounds(700, 80, 490, 460);
+		
+		this.add(chatTextField);
+		this.add(chatButton);
+		this.add(chatScrollPane);
+				
 		if (clientSideConnection.getPlayerID() == 1) {
 			message.setText("You are player #1. You go first.");
 			otherPlayer = 2;			
@@ -239,6 +266,19 @@ public class Player extends JFrame {
 		buttons[4].addActionListener(al);
 		buttons[5].addActionListener(al);
 		buttons[6].addActionListener(al);
+	}
+	
+	public void setUpChat() {
+		ActionListener chatListener = new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent ae) {
+				String message = chatTextField.getText();
+				clientSideConnection.sendMessage(message);
+				chatTextField.setText("");
+			}
+		};
+		
+		chatButton.addActionListener(chatListener);
 	}
 
 	public void toggleButtons() {
@@ -416,5 +456,6 @@ public class Player extends JFrame {
 		p.connectToServer();
 		p.setUpGUI();
 		p.setUpButtons();
+		p.setUpChat();
 	}
 }
