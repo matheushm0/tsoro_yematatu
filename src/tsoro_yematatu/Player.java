@@ -24,7 +24,7 @@ public class Player extends JFrame {
 	private ImageIcon player1Image;
 	private ImageIcon player2Image;
 	
-	private JTextArea message;
+//	private JTextArea message;
 	private JButton[] buttons = new JButton[7];
 	
 	private JTextArea chatArea;
@@ -50,7 +50,7 @@ public class Player extends JFrame {
 	private ClientSideConnection clientSideConnection;
 	
 	public Player() {		
-		this.message = new JTextArea();
+//		this.message = new JTextArea();
 		this.buttons[0] = new JButton();
 		this.buttons[1] = new JButton();
 		this.buttons[2] = new JButton();
@@ -133,7 +133,7 @@ public class Player extends JFrame {
 		buttons[3].setForeground(Color.WHITE);
 		buttons[3].setActionCommand("3");
 
-		buttons[4].setBounds(46, 540, 80, 80);
+		buttons[4].setBounds(45, 539, 80, 80);
 		buttons[4].setOpaque(false);
 		buttons[4].setContentAreaFilled(false);
 		buttons[4].setBorderPainted(false);
@@ -143,7 +143,7 @@ public class Player extends JFrame {
 		buttons[4].setForeground(Color.WHITE);
 		buttons[4].setActionCommand("4");
 
-		buttons[5].setBounds(290, 540, 80, 80);
+		buttons[5].setBounds(291, 539, 80, 80);
 		buttons[5].setOpaque(false);
 		buttons[5].setContentAreaFilled(false);
 		buttons[5].setBorderPainted(false);
@@ -153,7 +153,7 @@ public class Player extends JFrame {
 		buttons[5].setForeground(Color.WHITE);
 		buttons[5].setActionCommand("5");
 
-		buttons[6].setBounds(557, 540, 80, 80);
+		buttons[6].setBounds(556, 539, 80, 80);
 		buttons[6].setOpaque(false);
 		buttons[6].setContentAreaFilled(false);
 		buttons[6].setBorderPainted(false);
@@ -171,13 +171,13 @@ public class Player extends JFrame {
 		this.add(buttons[5]);
 		this.add(buttons[6]);
 
-		message.setBounds(200, 10, 400, 30);
-		message.setWrapStyleWord(true);
-		message.setLineWrap(true);
-		message.setEditable(false);
-		message.setFont(message.getFont().deriveFont(15f));
-		
-		this.add(message);
+//		message.setBounds(200, 10, 400, 30);
+//		message.setWrapStyleWord(true);
+//		message.setLineWrap(true);
+//		message.setEditable(false);
+//		message.setFont(message.getFont().deriveFont(15f));
+//		
+//		this.add(message);
 		
 		//set up chat
 		chatTextField.setBounds(700, 550, 410, 40);
@@ -195,12 +195,12 @@ public class Player extends JFrame {
 		this.add(chatScrollPane);
 				
 		if (clientSideConnection.getPlayerID() == 1) {
-			message.setText("You are player #1. You go first.");
+//			message.setText("You are player #1. You go first.");
 			otherPlayer = 2;			
 			buttonsEnabled = true;
 		} 
 		else {
-			message.setText("You are player #2. Wait for your turn");
+//			message.setText("You are player #2. Wait for your turn");
 			otherPlayer = 1;			
 			buttonsEnabled = false;
 
@@ -228,7 +228,7 @@ public class Player extends JFrame {
 				JButton b = (JButton) ae.getSource();
 				int bNum = Integer.parseInt(b.getActionCommand());
 				
-				message.setText("You clicked button #" + bNum + ". Now wait for player #" + otherPlayer);
+//				message.setText("You clicked button #" + bNum + ". Now wait for player #" + otherPlayer);
 				
 				if (piecesUsed < 3) {
 					myPoints[piecesUsed] = bNum;					
@@ -272,63 +272,13 @@ public class Player extends JFrame {
 		ActionListener chatListener = new ActionListener() 
 		{
 			public void actionPerformed(ActionEvent ae) {
-				String message = chatTextField.getText();
-				clientSideConnection.sendMessage(message);
+//				String message = chatTextField.getText();
+//				clientSideConnection.sendMessage(message);
 				chatTextField.setText("");
 			}
 		};
 		
 		chatButton.addActionListener(chatListener);
-	}
-
-	public void toggleButtons() {
-		for (int i = 0; i < buttons.length; i++) {
-			buttons[i].setEnabled(buttonsEnabled);
-
-			if (turnsMade >= 3 && enemyPieces == 3) {
-				if (allPoints[i] != null && allPoints[i] == 2) {
-					buttons[i].setEnabled(false);
-				}
-
-				if (allPoints[i] == null) {
-					buttons[i].setEnabled(false);
-					buttons[i].setDisabledIcon(defaultImage);
-				}
-			} 
-			else {
-				if (allPoints[i] != null) {
-					buttons[i].setEnabled(false);
-				}
-			}
-		}
-		
-		setButtonColor();
-	}
-	
-	public void setButtonColor() {
-		for (int i = 0; i < enemyPoints.length; i++) {
-			if (clientSideConnection.getPlayerID() == 1) {
-				if (myPoints[i] != null) {
-					buttons[myPoints[i]].setIcon(player1Image);
-					buttons[myPoints[i]].setDisabledIcon(player1Image);
-				}
-
-				if (enemyPoints[i] != null) {
-					buttons[enemyPoints[i]].setDisabledIcon(player2Image);
-				}
-			}
-
-			if (clientSideConnection.getPlayerID() == 2) {
-				if (myPoints[i] != null) {
-					buttons[myPoints[i]].setIcon(player2Image);
-					buttons[myPoints[i]].setDisabledIcon(player2Image);
-				}
-
-				if (enemyPoints[i] != null) {
-					buttons[enemyPoints[i]].setDisabledIcon(player1Image);
-				}
-			}
-		}
 	}
 	
 	public void validateMove(int bNum) {						
@@ -357,15 +307,12 @@ public class Player extends JFrame {
 		
 		if (isValid) {			
 			updateAllPointsArray();
-			toggleButtons();
+			toggleButtonsAfterPiecesPlaced();
 			checkWinner();
 			
 			clientSideConnection.sendButtonNum(bNum);
 			clientSideConnection.sendUpdateArrayFlag(true);
 			clientSideConnection.sendUpdatedPoints(myPoints[0], myPoints[1], myPoints[2]);
-		}
-		else {
-			message.setText("Invalid Movement");
 		}
 	}
 	
@@ -418,15 +365,92 @@ public class Player extends JFrame {
 		checkWinner();
 		buttonsEnabled = true;
 
-		toggleButtons();
+		if (turnsMade >= 3 && enemyPieces == 3) {
+			toggleButtonsAfterPiecesPlaced();
+		}
+		else {
+			toggleButtons();
+		}
 	}
+	
+	public void toggleButtons() {
+		for (int i = 0; i < buttons.length; i++) {
+			buttons[i].setEnabled(buttonsEnabled);
+			
+			if (allPoints[i] != null) {
+				buttons[i].setEnabled(false);
+			}
+		}
+		
+		setButtonColor();
+	}
+	
+	public void toggleButtonsAfterPiecesPlaced() {
+		
+		Integer[] buttonToEnable = new Integer[2];
+		
+		for (int i = 0; i < allPoints.length; i++) {
+			if (allPoints[i] == null) {
+				buttonToEnable[0] = i;
+			}
+		}
+		
+		for (int i = 0; i < allPoints.length; i++) {
+			if (allPoints[i] != null) {
+				buttons[i].setEnabled(false);
+			}
+
+			if (allPoints[i] == null) {
+				buttons[i].setEnabled(false);
+				buttons[i].setDisabledIcon(defaultImage);
+			}
+			
+			if (allPoints[i] != null && allPoints[i] == 1) {
+				buttonToEnable[1] = i;
+				
+				for (Integer[] segment : segments) {			
+					if (Arrays.asList(segment).containsAll(Arrays.asList(buttonToEnable))) {
+						buttons[buttonToEnable[1]].setEnabled(buttonsEnabled);
+					}			
+				}
+			}
+		}
+		
+		setButtonColor();
+	}
+	
+	public void setButtonColor() {
+		for (int i = 0; i < enemyPoints.length; i++) {
+			if (clientSideConnection.getPlayerID() == 1) {
+				if (myPoints[i] != null) {
+					buttons[myPoints[i]].setIcon(player1Image);
+					buttons[myPoints[i]].setDisabledIcon(player1Image);
+				}
+
+				if (enemyPoints[i] != null) {
+					buttons[enemyPoints[i]].setDisabledIcon(player2Image);
+				}
+			}
+
+			if (clientSideConnection.getPlayerID() == 2) {
+				if (myPoints[i] != null) {
+					buttons[myPoints[i]].setIcon(player2Image);
+					buttons[myPoints[i]].setDisabledIcon(player2Image);
+				}
+
+				if (enemyPoints[i] != null) {
+					buttons[enemyPoints[i]].setDisabledIcon(player1Image);
+				}
+			}
+		}
+	}	
 	
 	private void checkWinner() {
 		for (Integer[] segment : segments) {			
 			if (Arrays.asList(segment).containsAll(Arrays.asList(myPoints))) {
 				buttonsEnabled = false;
 				
-				message.setText("You WIN!");
+//				message.setText("You WIN!");
 				clientSideConnection.closeConnection();
 			}
 		}		
