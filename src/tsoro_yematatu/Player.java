@@ -24,16 +24,13 @@ public class Player extends JFrame {
 	private ImageIcon player1Image;
 	private ImageIcon player2Image;
 	
-//	private JTextArea message;
 	private JButton[] buttons = new JButton[7];
 	
 	private JTextArea chatArea;
 	private JButton chatButton;
 	private JScrollPane chatScrollPane;
 	private JTextField chatTextField;
-	
-	private int otherPlayer;
-	
+		
 	private int turnsMade;
 	
 	private Integer[] myPoints;
@@ -50,7 +47,6 @@ public class Player extends JFrame {
 	private ClientSideConnection clientSideConnection;
 	
 	public Player() {		
-//		this.message = new JTextArea();
 		this.buttons[0] = new JButton();
 		this.buttons[1] = new JButton();
 		this.buttons[2] = new JButton();
@@ -170,14 +166,6 @@ public class Player extends JFrame {
 		this.add(buttons[4]);
 		this.add(buttons[5]);
 		this.add(buttons[6]);
-
-//		message.setBounds(200, 10, 400, 30);
-//		message.setWrapStyleWord(true);
-//		message.setLineWrap(true);
-//		message.setEditable(false);
-//		message.setFont(message.getFont().deriveFont(15f));
-//		
-//		this.add(message);
 		
 		//set up chat
 		chatTextField.setBounds(700, 550, 410, 40);
@@ -185,8 +173,13 @@ public class Player extends JFrame {
 		chatButton.setText("Send");
 		chatButton.setBounds(1110, 550, 80, 39);
 		
+		chatArea.setEditable(false);
 		chatArea.setColumns(20);
-		chatArea.setRows(5);
+		chatArea.setRows(5);		
+		chatArea.setWrapStyleWord(true);
+		chatArea.setLineWrap(true);
+		chatArea.setFont(chatArea.getFont().deriveFont(15f));
+
 		chatScrollPane.setViewportView(chatArea);
 		chatScrollPane.setBounds(700, 80, 490, 460);
 		
@@ -195,13 +188,11 @@ public class Player extends JFrame {
 		this.add(chatScrollPane);
 				
 		if (clientSideConnection.getPlayerID() == 1) {
-//			message.setText("You are player #1. You go first.");
-			otherPlayer = 2;			
+			chatArea.append("----- You are player #1. You go first. -----");
 			buttonsEnabled = true;
 		} 
 		else {
-//			message.setText("You are player #2. Wait for your turn");
-			otherPlayer = 1;			
+			chatArea.append("----- You are player #2. Wait for your turn. -----");
 			buttonsEnabled = false;
 
 			Thread t = new Thread(new Runnable() {
@@ -228,7 +219,7 @@ public class Player extends JFrame {
 				JButton b = (JButton) ae.getSource();
 				int bNum = Integer.parseInt(b.getActionCommand());
 				
-//				message.setText("You clicked button #" + bNum + ". Now wait for player #" + otherPlayer);
+				chatArea.append("\n----- You clicked button #" + bNum + ". Now wait for your turn. -----");
 				
 				if (piecesUsed < 3) {
 					myPoints[piecesUsed] = bNum;					
@@ -272,9 +263,13 @@ public class Player extends JFrame {
 		ActionListener chatListener = new ActionListener() 
 		{
 			public void actionPerformed(ActionEvent ae) {
-//				String message = chatTextField.getText();
-//				clientSideConnection.sendMessage(message);
-				chatTextField.setText("");
+				String message = chatTextField.getText();
+				
+				if (!message.isEmpty()) {
+					chatArea.append("\nPlayer #" + clientSideConnection.getPlayerID() + ": " + message);
+//					clientSideConnection.sendMessage(message);
+					chatTextField.setText("");
+				}
 			}
 		};
 		
@@ -450,7 +445,7 @@ public class Player extends JFrame {
 			if (Arrays.asList(segment).containsAll(Arrays.asList(myPoints))) {
 				buttonsEnabled = false;
 				
-//				message.setText("You WIN!");
+				chatArea.append("\n----- YOU WIN! -----");
 				clientSideConnection.closeConnection();
 			}
 		}		

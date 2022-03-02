@@ -33,7 +33,7 @@ public class Server
 
 	 	
 	public Server() {
-		System.out.println("----Iniciando Servidor----");
+		System.out.println("----Starting Server----");
 		numPlayers = 0;
 		
 		try {
@@ -46,13 +46,13 @@ public class Server
 	
 	public void acceptConnections() {
 		try {
-			System.out.println("Esperando conexões...");
+			System.out.println("Waiting Connections...");
 			
 			while (numPlayers < 2) {
 				Socket s = serverSocket.accept();
 				numPlayers++;
 				
-				System.out.println("Jogador #" + numPlayers + " se conectou!");
+				System.out.println("Player #" + numPlayers + " has connected!");
 				
 				ServerSideConnection serverSideConnection = new ServerSideConnection(s, numPlayers);
 				
@@ -67,7 +67,7 @@ public class Server
 				thread.start();
 			}
 			
-			System.out.println("Há 2 jogadores conectados. Não aceitando mais conexões.");
+			System.out.println("There are 2 players connected. No more connections accepted.");
 		} 
 		catch (IOException e) {
 			System.out.println("IOException - acceptConnections()");
@@ -102,16 +102,15 @@ public class Server
 				
 				while (true) {
 					if (playerID == 1) {
+//						player1Message = dataIn.readUTF();
+//						System.out.println("Player1: " + player1Message);
+						
 						player1ButtonNum = dataIn.readInt();
-						player1UpdateFlag = dataIn.readBoolean();
-						player1Message = dataIn.readUTF();
-						
-						System.out.println("Player1: " + player1Message);
-
-						System.out.println("Player 1 clicked button #" + player1ButtonNum);
 						player2.sendButtonNum(player1ButtonNum);
+						System.out.println("Player 1 clicked button #" + player1ButtonNum);
+
+						player1UpdateFlag = dataIn.readBoolean();
 						player2.sendUpdateArrayFlag(player1UpdateFlag);
-						
 						
 						if (player1UpdateFlag == true) {
 							player1UpdatedPoints0 = dataIn.readInt();
@@ -123,14 +122,14 @@ public class Server
 
 					} 
 					else {
-						player2ButtonNum = dataIn.readInt();
-						player2UpdateFlag = dataIn.readBoolean();
-						player2Message = dataIn.readUTF();
+//						player2Message = dataIn.readUTF();
+//						System.out.println("Player2: " + player2Message);
 						
-						System.out.println("Player2: " + player2Message);
-
+						player2ButtonNum = dataIn.readInt();
 						System.out.println("Player 2 clicked button #" + player2ButtonNum);
 						player1.sendButtonNum(player2ButtonNum);
+
+						player2UpdateFlag = dataIn.readBoolean();
 						player1.sendUpdateArrayFlag(player2UpdateFlag);
 						
 						if (player2UpdateFlag == true) {
@@ -148,15 +147,15 @@ public class Server
 			}
 		}
 		
-		public void sendMessage(String message) {
-			try {
-				dataOut.writeUTF(message);
-				dataOut.flush();
-			}
-			catch (IOException e) {
-				System.out.println("IO Exception - sendMessage()");
-			}
-		}
+//		public void sendMessage(String message) {
+//			try {
+//				dataOut.writeUTF(message);
+//				dataOut.flush();
+//			}
+//			catch (IOException e) {
+//				System.out.println("IO Exception - sendMessage()");
+//			}
+//		}
 		
 		public void sendButtonNum(int n) {
 			try {
