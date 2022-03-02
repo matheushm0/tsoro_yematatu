@@ -9,13 +9,15 @@ import java.net.Socket;
 public class Server 
 {
 	private ServerSocket serverSocket;
+	private ServerSocket chatSocket;
+	
 	private int numPlayers;
 	
 	private ServerSideConnection player1;
 	private ServerSideConnection player2;
 	
-	private String player1Message;
-	private String player2Message;
+	private ServerChatConnection player1Chat;
+	private ServerChatConnection player2Chat;
 	
 	private int player1ButtonNum;
 	private int player2ButtonNum;
@@ -30,7 +32,6 @@ public class Server
 	
 	private boolean player1UpdateFlag;
 	private boolean player2UpdateFlag;
-
 	 	
 	public Server() {
 		System.out.println("----Starting Server----");
@@ -38,6 +39,7 @@ public class Server
 		
 		try {
 			serverSocket = new ServerSocket(51734);
+			chatSocket = new ServerSocket(51738);
 		} 
 		catch (IOException e) {
 			System.out.println("IOException - Server()");
@@ -49,22 +51,30 @@ public class Server
 			System.out.println("Waiting Connections...");
 			
 			while (numPlayers < 2) {
-				Socket s = serverSocket.accept();
 				numPlayers++;
-				
-				System.out.println("Player #" + numPlayers + " has connected!");
-				
+
+				Socket s = serverSocket.accept();								
 				ServerSideConnection serverSideConnection = new ServerSideConnection(s, numPlayers);
-				
-				if (numPlayers == 1) {
-					player1 = serverSideConnection;
-				}
-				else {
-					player2 = serverSideConnection;
-				} 
 				
 				Thread thread = new Thread(serverSideConnection);
 				thread.start();
+				
+				Socket sc = chatSocket.accept();
+				ServerChatConnection serverChatConnection = new ServerChatConnection(sc, numPlayers);
+				
+				Thread chatThread = new Thread(serverChatConnection);
+				chatThread.start();
+				
+				if (numPlayers == 1) {
+					player1 = serverSideConnection;
+					player1Chat = serverChatConnection;
+				}
+				else {
+					player2 = serverSideConnection;
+					player2Chat = serverChatConnection;
+				} 
+				
+				System.out.println("Player #" + numPlayers + " has connected!");
 			}
 			
 			System.out.println("There are 2 players connected. No more connections accepted.");
@@ -102,8 +112,6 @@ public class Server
 				
 				while (true) {
 					if (playerID == 1) {
-//						player1Message = dataIn.readUTF();
-//						System.out.println("Player1: " + player1Message);
 						
 						player1ButtonNum = dataIn.readInt();
 						player2.sendButtonNum(player1ButtonNum);
@@ -122,8 +130,6 @@ public class Server
 
 					} 
 					else {
-//						player2Message = dataIn.readUTF();
-//						System.out.println("Player2: " + player2Message);
 						
 						player2ButtonNum = dataIn.readInt();
 						System.out.println("Player 2 clicked button #" + player2ButtonNum);
@@ -146,16 +152,6 @@ public class Server
 				System.out.println("IOException - run() SSC");
 			}
 		}
-		
-//		public void sendMessage(String message) {
-//			try {
-//				dataOut.writeUTF(message);
-//				dataOut.flush();
-//			}
-//			catch (IOException e) {
-//				System.out.println("IO Exception - sendMessage()");
-//			}
-//		}
 		
 		public void sendButtonNum(int n) {
 			try {
@@ -189,15 +185,80 @@ public class Server
 			}
 		}
 		
-//		public void closeConnection() {
-//			try {
-//				socket.close();
-//				System.out.println("----CONNECTION CLOSED----");
-//			}
-//			catch (IOException e) {
-//				System.out.println("IOException - closeConnection()");
-//			}
-//		}
+		public void closeConnection() {
+			try {
+				socket.close();
+				System.out.println("----CONNECTION CLOSED----");
+			}
+			catch (IOException e) {
+				System.out.println("IOException - closeConnection()");
+			}
+		}
+	}
+
+	private class ServerChatConnection implements Runnable {
+		
+		private Socket chatSocket;
+		private DataInputStream dataIn;
+		private DataOutputStream dataOut;
+		private int playerID;
+		
+		public ServerChatConnection(Socket s, int id) {
+			chatSocket = s;
+			playerID = id;
+			
+			try {
+				dataIn = new DataInputStream(chatSocket.getInputStream());
+				dataOut = new DataOutputStream(chatSocket.getOutputStream());
+			}
+			catch (IOException e) {
+				System.out.println("IOExcepiton - ServerSideConnection()");
+			}
+		}
+		
+		@Override
+		public void run() {
+			try {				
+				String message = "";
+				
+				while (!message.equalsIgnoreCase("exit")) {
+					message = dataIn.readUTF();
+					
+					if (playerID == 1) {
+						player2Chat.sendMessage(message);
+					} 
+					else {
+						player1Chat.sendMessage(message);
+					}
+				}
+				
+				player1Chat.closeConnection();
+				player2Chat.closeConnection();
+			}
+			catch (IOException e) {
+				System.out.println("IOException - run() SSC");
+			}
+		}
+		
+		public void sendMessage(String message) {
+			try {
+				dataOut.writeUTF(message);
+				dataOut.flush();
+			}
+			catch (IOException e) {
+				System.out.println("IO Exception - sendMessage()");
+			}
+		}
+		
+		public void closeConnection() {
+			try {
+				chatSocket.close();
+				System.out.println("----CONNECTION CLOSED----");
+			}
+			catch (IOException e) {
+				System.out.println("IOException - closeConnection()");
+			}
+		}
 	}
 	
 	public static void main(String[] args) {

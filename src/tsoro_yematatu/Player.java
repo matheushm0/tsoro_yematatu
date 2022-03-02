@@ -3,6 +3,9 @@ package tsoro_yematatu;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,6 +35,7 @@ public class Player extends JFrame {
 	private JTextField chatTextField;
 		
 	private int turnsMade;
+	private int otherPlayer;
 	
 	private Integer[] myPoints;
 	private Integer[] enemyPoints;
@@ -44,7 +48,8 @@ public class Player extends JFrame {
 		
 	private List<Integer[]> segments;
 	
-	private ClientSideConnection clientSideConnection;
+	private ClientSideConnection clientConnection;
+	private ClientChatConnection chatConnection;
 	
 	public Player() {		
 		this.buttons[0] = new JButton();
@@ -83,7 +88,7 @@ public class Player extends JFrame {
 		this.setResizable(false);
 		this.setBackground(Color.WHITE);
 		this.setSize(1300, 700);
-		this.setTitle("Tsoro Yematatu - Player #" + clientSideConnection.getPlayerID());
+		this.setTitle("Tsoro Yematatu - Player #" + clientConnection.getPlayerID());
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		displayField.setIcon(image);
@@ -186,13 +191,24 @@ public class Player extends JFrame {
 		this.add(chatTextField);
 		this.add(chatButton);
 		this.add(chatScrollPane);
+		
+		this.setVisible(true);
+		
+		Thread chatThread = new Thread(new Runnable() {
+			public void run() {
+				updateChat();
+			}
+		});
+		chatThread.start();
 				
-		if (clientSideConnection.getPlayerID() == 1) {
+		if (clientConnection.getPlayerID() == 1) {
 			chatArea.append("----- You are player #1. You go first. -----");
+			otherPlayer = 2;
 			buttonsEnabled = true;
 		} 
 		else {
 			chatArea.append("----- You are player #2. Wait for your turn. -----");
+			otherPlayer = 1;
 			buttonsEnabled = false;
 
 			Thread t = new Thread(new Runnable() {
@@ -204,12 +220,11 @@ public class Player extends JFrame {
 		}
 
 		toggleButtons();
-
-		this.setVisible(true);
 	}
 	
 	public void connectToServer() {
-		clientSideConnection = new ClientSideConnection();
+		clientConnection = new ClientSideConnection();
+		chatConnection = new ClientChatConnection();
 	}
 	
 	public void setUpButtons() {
@@ -237,8 +252,8 @@ public class Player extends JFrame {
 				else {
 					toggleButtons();
 					checkWinner();
-					clientSideConnection.sendButtonNum(bNum);
-					clientSideConnection.sendUpdateArrayFlag(false);
+					clientConnection.sendButtonNum(bNum);
+					clientConnection.sendUpdateArrayFlag(false);
 				}
 												
 				Thread t = new Thread(new Runnable() {
@@ -260,20 +275,44 @@ public class Player extends JFrame {
 	}
 	
 	public void setUpChat() {
-		ActionListener chatListener = new ActionListener() 
+		ActionListener actionListener = new ActionListener() 
 		{
 			public void actionPerformed(ActionEvent ae) {
-				String message = chatTextField.getText();
-				
-				if (!message.isEmpty()) {
-					chatArea.append("\nPlayer #" + clientSideConnection.getPlayerID() + ": " + message);
-//					clientSideConnection.sendMessage(message);
-					chatTextField.setText("");
+				sendChatMessage();
+			}
+		};
+		
+		KeyListener keyListener = new KeyAdapter()
+		{
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+					sendChatMessage();
 				}
 			}
 		};
 		
-		chatButton.addActionListener(chatListener);
+		chatButton.addActionListener(actionListener);
+		chatTextField.addKeyListener(keyListener);
+	}
+	
+	public void sendChatMessage() {
+		String message = chatTextField.getText();
+		
+		if (!message.isEmpty()) {
+			chatArea.append("\nPlayer #" + clientConnection.getPlayerID() + ": " + message);
+			chatConnection.sendMessage(message);
+			chatTextField.setText("");
+		}
+	}
+	
+	public void updateChat() {
+		String message = "";
+		
+		while (!message.equalsIgnoreCase("exit")) {
+			message = chatConnection.receiveMessage();
+			chatArea.append("\nPlayer #" + otherPlayer + ": " + message);	
+		}
 	}
 	
 	public void validateMove(int bNum) {						
@@ -305,9 +344,9 @@ public class Player extends JFrame {
 			toggleButtonsAfterPiecesPlaced();
 			checkWinner();
 			
-			clientSideConnection.sendButtonNum(bNum);
-			clientSideConnection.sendUpdateArrayFlag(true);
-			clientSideConnection.sendUpdatedPoints(myPoints[0], myPoints[1], myPoints[2]);
+			clientConnection.sendButtonNum(bNum);
+			clientConnection.sendUpdateArrayFlag(true);
+			clientConnection.sendUpdatedPoints(myPoints[0], myPoints[1], myPoints[2]);
 		}
 	}
 	
@@ -326,8 +365,8 @@ public class Player extends JFrame {
 	}
 	
 	public void updateTurn() {
-		int n = clientSideConnection.receiveButtonNum();
-		boolean updateArray = clientSideConnection.receiveUpdateArrayFlag();
+		int n = clientConnection.receiveButtonNum();
+		boolean updateArray = clientConnection.receiveUpdateArrayFlag();
 		
 		if (enemyPieces < 3) {
 			enemyPoints[enemyPieces] = n;			
@@ -346,8 +385,9 @@ public class Player extends JFrame {
 			}
 		}
 		
+		
 		if (updateArray == true) {
-			Integer[] updatedPointsArray = clientSideConnection.receiveUpdatedPoints();
+			Integer[] updatedPointsArray = clientConnection.receiveUpdatedPoints();
 			
 			enemyPoints[0] = updatedPointsArray[0];
 			enemyPoints[1] = updatedPointsArray[1];
@@ -416,7 +456,7 @@ public class Player extends JFrame {
 	
 	public void setButtonColor() {
 		for (int i = 0; i < enemyPoints.length; i++) {
-			if (clientSideConnection.getPlayerID() == 1) {
+			if (clientConnection.getPlayerID() == 1) {
 				if (myPoints[i] != null) {
 					buttons[myPoints[i]].setIcon(player1Image);
 					buttons[myPoints[i]].setDisabledIcon(player1Image);
@@ -427,7 +467,7 @@ public class Player extends JFrame {
 				}
 			}
 
-			if (clientSideConnection.getPlayerID() == 2) {
+			if (clientConnection.getPlayerID() == 2) {
 				if (myPoints[i] != null) {
 					buttons[myPoints[i]].setIcon(player2Image);
 					buttons[myPoints[i]].setDisabledIcon(player2Image);
@@ -446,7 +486,7 @@ public class Player extends JFrame {
 				buttonsEnabled = false;
 				
 				chatArea.append("\n----- YOU WIN! -----");
-				clientSideConnection.closeConnection();
+				clientConnection.closeConnection();
 			}
 		}		
 	}
