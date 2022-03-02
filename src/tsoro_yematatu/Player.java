@@ -1,6 +1,7 @@
 package tsoro_yematatu;
 
 import java.awt.Color;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
@@ -17,10 +18,12 @@ import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.text.DefaultCaret;
 
 public class Player extends JFrame {
 	private static final long serialVersionUID = 1L;
 	
+	//UI
 	private JLabel displayField;
 	private ImageIcon image;
 	private ImageIcon defaultImage;
@@ -34,6 +37,7 @@ public class Player extends JFrame {
 	private JScrollPane chatScrollPane;
 	private JTextField chatTextField;
 		
+	//GAME
 	private int turnsMade;
 	private int otherPlayer;
 	
@@ -47,11 +51,59 @@ public class Player extends JFrame {
 	private int enemyPieces;
 		
 	private List<Integer[]> segments;
+	private boolean winner;
 	
+	//CONNECTION
 	private ClientSideConnection clientConnection;
 	private ClientChatConnection chatConnection;
 	
 	public Player() {		
+		this.turnsMade = 0;
+		this.myPoints = new Integer[3];
+		this.enemyPoints = new Integer[3];
+		this.allPoints = new Integer[7];
+
+		this.piecesUsed = 0;
+		this.enemyPieces = 0;
+
+		this.winner = false;
+		this.segments = getSegmentsList();
+		
+		connectToServer();
+
+		initComponents();
+		setUpGUI();
+		
+		setUpThreads();
+		
+		setUpButtons();
+		setUpChat();
+	}
+
+	private List<Integer[]> getSegmentsList() {
+		List<Integer[]> segments = new ArrayList<Integer[]>();
+		
+		Integer[] horizontal1 = {1, 2, 3};
+		Integer[] horizontal2 = {4, 5, 6};
+		Integer[] diagonal1 = {0, 1, 4};
+		Integer[] diagonal2 = {0, 3, 6};
+		Integer[] vertical = {0, 2, 5};
+		
+		segments.add(horizontal1);
+		segments.add(horizontal2);
+		segments.add(diagonal1);
+		segments.add(diagonal2);
+		segments.add(vertical);
+		
+		return segments;
+	}
+	
+	private void connectToServer() {
+		clientConnection = new ClientSideConnection();
+		chatConnection = new ClientChatConnection();
+	}
+	
+	private void initComponents() {
 		this.buttons[0] = new JButton();
 		this.buttons[1] = new JButton();
 		this.buttons[2] = new JButton();
@@ -72,19 +124,9 @@ public class Player extends JFrame {
 		this.player2Image = new ImageIcon(this.getClass().getResource("/resources/images/player2.png"));
 		
 		this.displayField = new JLabel();
-
-		this.turnsMade = 0;
-		this.myPoints = new Integer[3];
-		this.enemyPoints = new Integer[3];
-		this.allPoints = new Integer[7];
-
-		this.piecesUsed = 0;
-		this.enemyPieces = 0;
-
-		this.segments = getSegmentsList();
 	}
-
-	public void setUpGUI() {
+	
+	private void setUpGUI() {
 		this.setResizable(false);
 		this.setBackground(Color.WHITE);
 		this.setSize(1300, 700);
@@ -184,7 +226,15 @@ public class Player extends JFrame {
 		chatArea.setWrapStyleWord(true);
 		chatArea.setLineWrap(true);
 		chatArea.setFont(chatArea.getFont().deriveFont(15f));
+		chatArea.setMargin(new Insets(10, 10, 10, 10));
+		
+		chatArea.append("----- WELCOME TO TSORO YEMATATU -----");
+		chatArea.append("\n----- If you want to surrender write !surrender in the chat -----");
 
+
+		DefaultCaret caret = (DefaultCaret) chatArea.getCaret();
+		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+		
 		chatScrollPane.setViewportView(chatArea);
 		chatScrollPane.setBounds(700, 80, 490, 460);
 		
@@ -193,21 +243,23 @@ public class Player extends JFrame {
 		this.add(chatScrollPane);
 		
 		this.setVisible(true);
-		
+	}
+	
+	private void setUpThreads() {
 		Thread chatThread = new Thread(new Runnable() {
 			public void run() {
 				updateChat();
 			}
 		});
 		chatThread.start();
-				
+
 		if (clientConnection.getPlayerID() == 1) {
-			chatArea.append("----- You are player #1. You go first. -----");
+			chatArea.append("\n----- You are player #1. You go first. -----");
 			otherPlayer = 2;
 			buttonsEnabled = true;
 		} 
 		else {
-			chatArea.append("----- You are player #2. Wait for your turn. -----");
+			chatArea.append("\n----- You are player #2. Wait for your turn. -----");
 			otherPlayer = 1;
 			buttonsEnabled = false;
 
@@ -222,19 +274,12 @@ public class Player extends JFrame {
 		toggleButtons();
 	}
 	
-	public void connectToServer() {
-		clientConnection = new ClientSideConnection();
-		chatConnection = new ClientChatConnection();
-	}
-	
-	public void setUpButtons() {
+	private void setUpButtons() {
 		ActionListener al = new ActionListener() 
 		{
 			public void actionPerformed(ActionEvent ae) {
 				JButton b = (JButton) ae.getSource();
 				int bNum = Integer.parseInt(b.getActionCommand());
-				
-				chatArea.append("\n----- You clicked button #" + bNum + ". Now wait for your turn. -----");
 				
 				if (piecesUsed < 3) {
 					myPoints[piecesUsed] = bNum;					
@@ -251,9 +296,9 @@ public class Player extends JFrame {
 				} 					
 				else {
 					toggleButtons();
-					checkWinner();
 					clientConnection.sendButtonNum(bNum);
 					clientConnection.sendUpdateArrayFlag(false);
+					checkWinner();
 				}
 												
 				Thread t = new Thread(new Runnable() {
@@ -274,7 +319,7 @@ public class Player extends JFrame {
 		buttons[6].addActionListener(al);
 	}
 	
-	public void setUpChat() {
+	private void setUpChat() {
 		ActionListener actionListener = new ActionListener() 
 		{
 			public void actionPerformed(ActionEvent ae) {
@@ -296,81 +341,19 @@ public class Player extends JFrame {
 		chatTextField.addKeyListener(keyListener);
 	}
 	
-	public void sendChatMessage() {
-		String message = chatTextField.getText();
-		
-		if (!message.isEmpty()) {
-			chatArea.append("\nPlayer #" + clientConnection.getPlayerID() + ": " + message);
-			chatConnection.sendMessage(message);
-			chatTextField.setText("");
-		}
-	}
-	
-	public void updateChat() {
-		String message = "";
-		
-		while (!message.equalsIgnoreCase("exit")) {
-			message = chatConnection.receiveMessage();
-			chatArea.append("\nPlayer #" + otherPlayer + ": " + message);	
-		}
-	}
-	
-	public void validateMove(int bNum) {						
-		boolean isValid = false;
-		
-		Integer[] buttonToSwitch = new Integer[2];
-		buttonToSwitch[0] = bNum;
-		
-		for (int i = 0; i < allPoints.length; i++) {
-			if (allPoints[i] == null) {
-				buttonToSwitch[1] = i;
-			}
-		}
-		
-		for (Integer[] segment : segments) {			
-			if (Arrays.asList(segment).containsAll(Arrays.asList(buttonToSwitch))) {
-				isValid = true;
-				
-				for (int i = 0; i < myPoints.length; i++) {
-					if (myPoints[i].equals(buttonToSwitch[0])) {
-						myPoints[i] = buttonToSwitch[1];
-					}
-				}
-			}			
-		}
-		
-		if (isValid) {			
-			updateAllPointsArray();
-			toggleButtonsAfterPiecesPlaced();
-			checkWinner();
-			
-			clientConnection.sendButtonNum(bNum);
-			clientConnection.sendUpdateArrayFlag(true);
-			clientConnection.sendUpdatedPoints(myPoints[0], myPoints[1], myPoints[2]);
-		}
-	}
-	
-	public void updateAllPointsArray() {
-		allPoints = new Integer[7];
-		
-		for (int i = 0; i < myPoints.length; i++) {
-			if (myPoints[i] != null) {
-				allPoints[myPoints[i]] = 1;
-			}
-			
-			if (enemyPoints[i] != null) {
-				allPoints[enemyPoints[i]] = 2;
-			}	
-		}
-	}
-	
-	public void updateTurn() {
+	//GAME
+	private void updateTurn() {
 		int n = clientConnection.receiveButtonNum();
 		boolean updateArray = clientConnection.receiveUpdateArrayFlag();
 		
-		if (enemyPieces < 3) {
-			enemyPoints[enemyPieces] = n;			
-			enemyPieces++;
+		if (n != -1) {
+			chatArea.append("\n----- Player #" + otherPlayer + " clicked button #" + n 
+					+ ". It's your turn. -----");	
+		
+			if (enemyPieces < 3) {
+				enemyPoints[enemyPieces] = n;			
+				enemyPieces++;
+			}
 		}
 
 		if (turnsMade <= 3 && updateArray == false) {
@@ -393,11 +376,9 @@ public class Player extends JFrame {
 			enemyPoints[1] = updatedPointsArray[1];
 			enemyPoints[2] = updatedPointsArray[2];
 
-			updateAllPointsArray();
-			
+			updateAllPointsArray();			
 		}
 		
-		checkWinner();
 		buttonsEnabled = true;
 
 		if (turnsMade >= 3 && enemyPieces == 3) {
@@ -406,9 +387,13 @@ public class Player extends JFrame {
 		else {
 			toggleButtons();
 		}
+		
+		if (!winner) {
+			checkWinner();
+		}
 	}
 	
-	public void toggleButtons() {
+	private void toggleButtons() {
 		for (int i = 0; i < buttons.length; i++) {
 			buttons[i].setEnabled(buttonsEnabled);
 			
@@ -420,7 +405,7 @@ public class Player extends JFrame {
 		setButtonColor();
 	}
 	
-	public void toggleButtonsAfterPiecesPlaced() {
+	private void toggleButtonsAfterPiecesPlaced() {
 		
 		Integer[] buttonToEnable = new Integer[2];
 		
@@ -454,7 +439,7 @@ public class Player extends JFrame {
 		setButtonColor();
 	}
 	
-	public void setButtonColor() {
+	private void setButtonColor() {
 		for (int i = 0; i < enemyPoints.length; i++) {
 			if (clientConnection.getPlayerID() == 1) {
 				if (myPoints[i] != null) {
@@ -481,40 +466,120 @@ public class Player extends JFrame {
 	}	
 	
 	private void checkWinner() {
-		for (Integer[] segment : segments) {			
-			if (Arrays.asList(segment).containsAll(Arrays.asList(myPoints))) {
-				buttonsEnabled = false;
 				
-				chatArea.append("\n----- YOU WIN! -----");
+		for (Integer[] segment : segments) {			
+			if (Arrays.asList(segment).containsAll(Arrays.asList(myPoints))) {		
+				winner = true;
+				chatArea.append("\n----- Player#" + clientConnection.getPlayerID() + " WINS! -----");
+				
+				chatConnection.sendMessage("@win@");
 				clientConnection.closeConnection();
 			}
-		}		
+		}	
 	}
 	
+	private void validateMove(int bNum) {						
+		boolean isValid = false;
+		
+		Integer[] buttonToSwitch = new Integer[2];
+		buttonToSwitch[0] = bNum;
+		
+		for (int i = 0; i < allPoints.length; i++) {
+			if (allPoints[i] == null) {
+				buttonToSwitch[1] = i;
+			}
+		}
+		
+		for (Integer[] segment : segments) {			
+			if (Arrays.asList(segment).containsAll(Arrays.asList(buttonToSwitch))) {
+				isValid = true;
+				
+				for (int i = 0; i < myPoints.length; i++) {
+					if (myPoints[i].equals(buttonToSwitch[0])) {
+						myPoints[i] = buttonToSwitch[1];
+					}
+				}
+			}			
+		}
+		
+		if (isValid) {			
+			updateAllPointsArray();
+			toggleButtonsAfterPiecesPlaced();
+			
+			clientConnection.sendButtonNum(bNum);
+			clientConnection.sendUpdateArrayFlag(true);
+			clientConnection.sendUpdatedPoints(myPoints[0], myPoints[1], myPoints[2]);
+			
+			checkWinner();
+		}
+	}
 	
-	private List<Integer[]> getSegmentsList() {
-		List<Integer[]> segments = new ArrayList<Integer[]>();
+	private void updateAllPointsArray() {
+		allPoints = new Integer[7];
 		
-		Integer[] horizontal1 = {1, 2, 3};
-		Integer[] horizontal2 = {4, 5, 6};
-		Integer[] diagonal1 = {0, 1, 4};
-		Integer[] diagonal2 = {0, 3, 6};
-		Integer[] vertical = {0, 2, 5};
+		for (int i = 0; i < myPoints.length; i++) {
+			if (myPoints[i] != null) {
+				allPoints[myPoints[i]] = 1;
+			}
+			
+			if (enemyPoints[i] != null) {
+				allPoints[enemyPoints[i]] = 2;
+			}	
+		}
+	}
+	
+	//CHAT
+	public void sendChatMessage() {
+		String message = chatTextField.getText();
 		
-		segments.add(horizontal1);
-		segments.add(horizontal2);
-		segments.add(diagonal1);
-		segments.add(diagonal2);
-		segments.add(vertical);
+		chatArea.append("\nPlayer #" + clientConnection.getPlayerID() + ": " + message);
+		chatConnection.sendMessage(message);
+		chatTextField.setText("");
 		
-		return segments;
+		if (message.equalsIgnoreCase("!surrender") && !winner) {
+			chatArea.append("\n----- You surrendered. Player #" + otherPlayer + " wins! -----");
+			
+			clientConnection.closeConnection();
+			buttonsEnabled = false;
+			toggleButtons();
+			
+			winner = true;
+		}
+	}
+	
+	public void updateChat() {
+		String message = "";
+		
+		while (!message.equalsIgnoreCase("@exit@")) {
+			message = chatConnection.receiveMessage();
+			
+			if (!message.equalsIgnoreCase("@win@")) {
+				chatArea.append("\nPlayer #" + otherPlayer + ": " + message);	
+			}
+						
+			if (message.equalsIgnoreCase("@win@") && !winner) {
+				chatArea.append("\n----- Player #" + otherPlayer + " WINS! -----");
+				
+				clientConnection.closeConnection();
+				buttonsEnabled = false;
+				toggleButtons();
+				
+				winner = true;
+			}
+			
+			if (message.equalsIgnoreCase("!surrender") && !winner) {
+				chatArea.append("\n----- YOU WIN! Player #" + otherPlayer + " surrendered. -----");
+				
+				clientConnection.closeConnection();
+				buttonsEnabled = false;
+				toggleButtons();
+				
+				winner = true;
+			}
+		}
 	}
 	
 	public static void main(String[] args) {
-		Player p = new Player();
-		p.connectToServer();
-		p.setUpGUI();
-		p.setUpButtons();
-		p.setUpChat();
+		new Player();
 	}
 }

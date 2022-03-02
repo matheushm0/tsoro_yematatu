@@ -15,19 +15,19 @@ public class ClientChatConnection {
 		System.out.println("----Client Chat----");
 		
 		try {
-			socket = new Socket("localhost", 51738);
+			socket = new Socket("localhost", 8082);
 			dataIn = new DataInputStream(socket.getInputStream());
 			dataOut = new DataOutputStream(socket.getOutputStream());
 		}
 		catch (IOException e) {
-			System.out.println("IOException - ClientSideConnection()");
+			System.out.println("IOException - ClientChatConnection()");
 		}
 	}
 	
 	public void sendMessage(String message) {
 		try {
 			dataOut.writeUTF(message);
-//			dataOut.flush();
+			dataOut.flush();
 		}
 		catch (IOException e) {
 			System.out.println("IO Exception - sendMessage()");
@@ -41,7 +41,8 @@ public class ClientChatConnection {
 			message = dataIn.readUTF();
 		}
 		catch (IOException e) {
-			System.out.println("IO Exception - receiveButtonNum()");
+			System.out.println("IO Exception - receiveMessage()");
+			System.exit(0);
 		}
 		
 		return message;

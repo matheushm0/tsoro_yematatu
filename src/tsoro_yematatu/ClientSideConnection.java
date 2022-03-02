@@ -17,7 +17,7 @@ public class ClientSideConnection {
 		System.out.println("----Client----");
 		
 		try {
-			socket = new Socket("localhost", 51734);
+			socket = new Socket("localhost", 8080);
 			dataIn = new DataInputStream(socket.getInputStream());
 			dataOut = new DataOutputStream(socket.getOutputStream());
 

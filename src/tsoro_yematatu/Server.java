@@ -38,8 +38,8 @@ public class Server
 		numPlayers = 0;
 		
 		try {
-			serverSocket = new ServerSocket(51734);
-			chatSocket = new ServerSocket(51738);
+			serverSocket = new ServerSocket(8080);
+			chatSocket = new ServerSocket(8082);
 		} 
 		catch (IOException e) {
 			System.out.println("IOException - Server()");
@@ -109,10 +109,10 @@ public class Server
 			try {
 				dataOut.writeInt(playerID);
 				dataOut.flush();
-				
+								
 				while (true) {
+										
 					if (playerID == 1) {
-						
 						player1ButtonNum = dataIn.readInt();
 						player2.sendButtonNum(player1ButtonNum);
 						System.out.println("Player 1 clicked button #" + player1ButtonNum);
@@ -127,10 +127,8 @@ public class Server
 
 							player2.sendUpdatedPoints(player1UpdatedPoints0, player1UpdatedPoints1, player1UpdatedPoints2);
 						}
-
 					} 
 					else {
-						
 						player2ButtonNum = dataIn.readInt();
 						System.out.println("Player 2 clicked button #" + player2ButtonNum);
 						player1.sendButtonNum(player2ButtonNum);
@@ -150,6 +148,9 @@ public class Server
 			}
 			catch (IOException e) {
 				System.out.println("IOException - run() SSC");
+				
+				player1.closeConnection();
+				player2.closeConnection();
 			}
 		}
 		
@@ -212,7 +213,7 @@ public class Server
 				dataOut = new DataOutputStream(chatSocket.getOutputStream());
 			}
 			catch (IOException e) {
-				System.out.println("IOExcepiton - ServerSideConnection()");
+				System.out.println("IOExcepiton - ServerChatConnection()");
 			}
 		}
 		
@@ -221,7 +222,7 @@ public class Server
 			try {				
 				String message = "";
 				
-				while (!message.equalsIgnoreCase("exit")) {
+				while (!message.equalsIgnoreCase("@exit@")) {
 					message = dataIn.readUTF();
 					
 					if (playerID == 1) {
@@ -236,7 +237,10 @@ public class Server
 				player2Chat.closeConnection();
 			}
 			catch (IOException e) {
-				System.out.println("IOException - run() SSC");
+				System.out.println("IOException - run() SCC");
+
+				player1Chat.closeConnection();
+				player2Chat.closeConnection();
 			}
 		}
 		
