@@ -51,7 +51,10 @@ public class Player extends JFrame {
 	private int enemyPieces;
 		
 	private List<Integer[]> segments;
+	
 	private boolean winner;
+	private boolean draw;
+	private int drawCount;
 	
 	//CONNECTION
 	private ClientSideConnection clientConnection;
@@ -65,9 +68,12 @@ public class Player extends JFrame {
 
 		this.piecesUsed = 0;
 		this.enemyPieces = 0;
+		
+		this.segments = getSegmentsList();
 
 		this.winner = false;
-		this.segments = getSegmentsList();
+		this.draw = false;
+		this.drawCount = 0;
 		
 		connectToServer();
 
@@ -230,6 +236,7 @@ public class Player extends JFrame {
 		
 		chatArea.append("----- WELCOME TO TSORO YEMATATU -----");
 		chatArea.append("\n----- If you want to surrender write !surrender in the chat -----");
+		chatArea.append("\n----- If you want to request a draw write !draw in the chat -----");
 
 
 		DefaultCaret caret = (DefaultCaret) chatArea.getCaret();
@@ -545,6 +552,29 @@ public class Player extends JFrame {
 			
 			winner = true;
 		}
+		
+		if (message.equalsIgnoreCase("!draw") && !winner) {
+			if (draw && drawCount > 0) {
+				chatArea.append("\n----- You already requested a draw. Wait for your opponent -----");
+			}
+			
+			if (!draw && drawCount == 0) {
+				chatArea.append("\n----- You requested a draw. Wait for your opponent -----");
+				draw = true;
+				drawCount++;
+			}
+			
+			if (!draw && drawCount > 0) {
+				chatArea.append("\n----- GAME OVER! Both players agreed to a draw -----");
+				
+				clientConnection.closeConnection();
+				buttonsEnabled = false;
+				toggleButtons();
+				
+				winner = true;
+				draw = true;
+			}
+		}
 	}
 	
 	public void updateChat() {
@@ -575,6 +605,23 @@ public class Player extends JFrame {
 				toggleButtons();
 				
 				winner = true;
+			}
+			
+			if (message.equalsIgnoreCase("!draw") && !winner) {
+				if (draw) {
+					chatArea.append("\n----- GAME OVER! Both players agreed to a draw -----");
+					
+					clientConnection.closeConnection();
+					buttonsEnabled = false;
+					toggleButtons();
+					
+					winner = true;
+					draw = true;
+				}
+				else {
+					chatArea.append("\n----- Player #" + otherPlayer + " requested a draw. Send !draw to accept -----");
+					drawCount++;
+				}
 			}
 		}
 	}
