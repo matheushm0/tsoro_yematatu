@@ -1,4 +1,4 @@
-package tsoro_yematatu_rpc;
+package tsoro_yematatu_rmi;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;

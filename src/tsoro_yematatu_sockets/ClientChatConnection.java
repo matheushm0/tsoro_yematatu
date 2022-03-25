@@ -1,4 +1,4 @@
-package tsoro_yematatu;
+package tsoro_yematatu_sockets;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
