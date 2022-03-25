@@ -46,8 +46,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 			}	
 		}
 		catch (Exception e) {
-			//TODO
-			System.out.println("Exception: " + e.getMessage());
+			System.out.println("Exception - lookupPlayer()");
 		}
 	}
 
@@ -61,6 +60,28 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 			player1.updateTurn(bNum);
 		}
 	}
+
+	@Override
+	public void updatePoints(int p0, int p1, int p2, int playerID) throws RemoteException {
+		if (playerID == 1) {
+			player2.updatePoints(p0, p1, p2);
+		}
+		
+		if (playerID == 2) {
+			player1.updatePoints(p0, p1, p2);
+		}
+	}
+	
+	@Override
+	public void sendMessage(String msg, int playerID) throws RemoteException {
+		if (playerID == 1) {
+			player2.receiveMessage(msg);
+		}
+		
+		if (playerID == 2) {
+			player1.receiveMessage(msg);
+		}
+	}
 	
 	public static void main(String[] args) {
 
@@ -71,8 +92,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 			System.out.println("Waiting Connections...");
 		}
 		catch (Exception e) {
-			//TODO
-			System.out.println("Exception: " + e.getMessage());
+			System.out.println("Exception - main()");
 		}
 		
 	}

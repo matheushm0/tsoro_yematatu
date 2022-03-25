@@ -7,9 +7,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.net.MalformedURLException;
 import java.rmi.Naming;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
@@ -65,7 +63,6 @@ public class Player extends JFrame {
 	//CONNECTION
 	private ServerInterface serverInterface;
 	private ClientSideConnection clientConnection;
-//	private ClientChatConnection chatConnection;
 	
 	public Player() {		
 		this.turnsMade = 0;
@@ -87,7 +84,7 @@ public class Player extends JFrame {
 		initComponents();
 		setUpGUI();
 		
-		setUpThreads();
+		setUpPlayers();
 		
 		setUpButtons();
 		setUpChat();
@@ -112,8 +109,6 @@ public class Player extends JFrame {
 	}
 	
 	private void connectToServer() {
-//		chatConnection = new ClientChatConnection();
-		
 		try {
 			serverInterface = (ServerInterface) Naming.lookup("//localhost/ServerRef");
 
@@ -127,8 +122,7 @@ public class Player extends JFrame {
 			serverInterface.lookupPlayer(playerURL, playerID);
 		} 
 		catch (Exception e) {
-			//TODO
-			System.out.println("Exception: " + e.getMessage());
+			System.out.println("Exception - connectToServer()");
 		}
 	}
 	
@@ -275,14 +269,8 @@ public class Player extends JFrame {
 		this.setVisible(true);
 	}
 	
-	private void setUpThreads() {
-//		Thread chatThread = new Thread(new Runnable() {
-//			public void run() {
-//				updateChat();
-//			}
-//		});
-//		chatThread.start();
-
+	private void setUpPlayers() {
+		
 		if (playerID == 1) {
 			chatArea.append("\n----- You are player #1. You go first. -----");
 			otherPlayer = 2;
@@ -292,13 +280,6 @@ public class Player extends JFrame {
 			chatArea.append("\n----- You are player #2. Wait for your turn. -----");
 			otherPlayer = 1;
 			buttonsEnabled = false;
-
-//			Thread t = new Thread(new Runnable() {
-//				public void run() {
-//					updateTurn();
-//				}
-//			});
-//			t.start();
 		}
 
 		toggleButtons();
@@ -326,21 +307,16 @@ public class Player extends JFrame {
 				} 					
 				else {
 					toggleButtons();
+					
 					try {
 						serverInterface.sendButtonNum(bNum, playerID);
-					} catch (Exception e) {
-						System.out.println("Exception: " + e.getMessage());
+					} 
+					catch (Exception e) {
+						System.out.println("Exception - setUpButtons()");
 					}
-//					clientConnection.sendUpdateArrayFlag(false);
+					
 					checkWinner();
 				}
-												
-//				Thread t = new Thread(new Runnable() {
-//					public void run() {
-//						updateTurn();
-//					}
-//				});
-//				t.start();
 			}
 		};
 		
@@ -357,7 +333,7 @@ public class Player extends JFrame {
 		ActionListener actionListener = new ActionListener() 
 		{
 			public void actionPerformed(ActionEvent ae) {
-//				sendChatMessage();
+				sendChatMessage();
 			}
 		};
 		
@@ -366,7 +342,7 @@ public class Player extends JFrame {
 			@Override
 			public void keyPressed(KeyEvent e) {
 				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-//					sendChatMessage();
+					sendChatMessage();
 				}
 			}
 		};
@@ -388,7 +364,6 @@ public class Player extends JFrame {
 
 		@Override
 		public void updateTurn(int bNum) throws RemoteException {
-			boolean updateArray = false;
 			
 			if (bNum != -1) {
 				chatArea.append("\n----- Player #" + otherPlayer + " clicked button #" + bNum 
@@ -400,7 +375,7 @@ public class Player extends JFrame {
 				}
 			}
 	
-			if (turnsMade <= 3 && updateArray == false) {
+			if (turnsMade <= 3) {
 				for (int i = 0; i < myPoints.length; i++) {
 					if (myPoints[i] != null) {
 						allPoints[myPoints[i]] = 1;
@@ -411,17 +386,6 @@ public class Player extends JFrame {
 					}			
 				}
 			}
-			
-			
-//			if (updateArray == true) {
-//				Integer[] updatedPointsArray = clientConnection.receiveUpdatedPoints();
-//				
-//				enemyPoints[0] = updatedPointsArray[0];
-//				enemyPoints[1] = updatedPointsArray[1];
-//				enemyPoints[2] = updatedPointsArray[2];
-//	
-//				updateAllPointsArray();			
-//			}
 			
 			buttonsEnabled = true;
 	
@@ -436,60 +400,77 @@ public class Player extends JFrame {
 				checkWinner();
 			}
 		}
-		
+
+		@Override
+		public void updatePoints(int p0, int p1, int p2) throws RemoteException {
+			
+			enemyPoints[0] = p0;
+			enemyPoints[1] = p1;
+			enemyPoints[2] = p2;
+
+			updateAllPointsArray();
+
+			buttonsEnabled = true;
+
+			if (turnsMade >= 3 && enemyPieces == 3) {
+				toggleButtonsAfterPiecesPlaced();
+			} 
+			else {
+				toggleButtons();
+			}
+
+			if (!winner) {
+				checkWinner();
+			}
+		}
+
+		//CHAT
+		@Override
+		public void receiveMessage(String message) throws RemoteException {
+			
+			if (!message.equalsIgnoreCase("@exit@")) {
+				
+				if (!message.equalsIgnoreCase("@win@")) {
+					chatArea.append("\nPlayer #" + otherPlayer + ": " + message);	
+				}
+							
+				if (message.equalsIgnoreCase("@win@") && !winner) {
+					chatArea.append("\n----- Player #" + otherPlayer + " WINS! -----");
+					
+					buttonsEnabled = false;
+					toggleButtons();
+					
+					winner = true;
+				}
+				
+				if (message.equalsIgnoreCase("!surrender") && !winner) {
+					chatArea.append("\n----- YOU WIN! Player #" + otherPlayer + " surrendered. -----");
+					
+					buttonsEnabled = false;
+					toggleButtons();
+					
+					winner = true;
+				}
+				
+				if (message.equalsIgnoreCase("!draw") && !winner) {
+					if (draw) {
+						chatArea.append("\n----- GAME OVER! Both players agreed to a draw -----");
+						
+						buttonsEnabled = false;
+						toggleButtons();
+						
+						winner = true;
+						draw = true;
+					}
+					else {
+						chatArea.append("\n----- Player #" + otherPlayer + " requested a draw. Send !draw to accept -----");
+						drawCount++;
+					}
+				}
+			}			
+		}
 	}
-	
-//	private void updateTurn() {
-//		int n = clientConnection.receiveButtonNum();
-//		boolean updateArray = clientConnection.receiveUpdateArrayFlag();
-		
-//		if (n != -1) {
-//			chatArea.append("\n----- Player #" + otherPlayer + " clicked button #" + n 
-//					+ ". It's your turn. -----");	
-//		
-//			if (enemyPieces < 3) {
-//				enemyPoints[enemyPieces] = n;			
-//				enemyPieces++;
-//			}
-//		}
-//
-//		if (turnsMade <= 3 && updateArray == false) {
-//			for (int i = 0; i < myPoints.length; i++) {
-//				if (myPoints[i] != null) {
-//					allPoints[myPoints[i]] = 1;
-//				}
-//				
-//				if (enemyPoints[i] != null) {
-//					allPoints[enemyPoints[i]] = 2;
-//				}			
-//			}
-//		}
-		
-		
-//		if (updateArray == true) {
-//			Integer[] updatedPointsArray = clientConnection.receiveUpdatedPoints();
-//			
-//			enemyPoints[0] = updatedPointsArray[0];
-//			enemyPoints[1] = updatedPointsArray[1];
-//			enemyPoints[2] = updatedPointsArray[2];
-//
-//			updateAllPointsArray();			
-//		}
-		
-//		buttonsEnabled = true;
-//
-//		if (turnsMade >= 3 && enemyPieces == 3) {
-//			toggleButtonsAfterPiecesPlaced();
-//		}
-//		else {
-//			toggleButtons();
-//		}
-//		
-//		if (!winner) {
-//			checkWinner();
-//		}
-//	}
-	
+
 	private void toggleButtons() {
 		for (int i = 0; i < buttons.length; i++) {
 			buttons[i].setEnabled(buttonsEnabled);
@@ -569,8 +550,12 @@ public class Player extends JFrame {
 				winner = true;
 				chatArea.append("\n----- Player#" + playerID + " WINS! -----");
 				
-//				chatConnection.sendMessage("@win@");
-//				clientConnection.closeConnection();
+				try {
+					serverInterface.sendMessage("@win@", playerID);
+				} 
+				catch (Exception e) {
+					System.out.println("Exception - checkWinner()");
+				}
 			}
 		}	
 	}
@@ -603,9 +588,13 @@ public class Player extends JFrame {
 			updateAllPointsArray();
 			toggleButtonsAfterPiecesPlaced();
 			
-//			clientConnection.sendButtonNum(bNum);
-//			clientConnection.sendUpdateArrayFlag(true);
-//			clientConnection.sendUpdatedPoints(myPoints[0], myPoints[1], myPoints[2]);
+			try {
+				serverInterface.sendButtonNum(bNum, playerID);
+				serverInterface.updatePoints(myPoints[0], myPoints[1], myPoints[2], playerID);
+			} 
+			catch (Exception e) {
+				System.out.println("Exception - validateMove()");
+			}
 			
 			checkWinner();
 		}
@@ -626,95 +615,51 @@ public class Player extends JFrame {
 	}
 	
 	//CHAT
-//	public void sendChatMessage() {
-//		String message = chatTextField.getText();
-//		
-//		chatArea.append("\nPlayer #" + clientConnection.getPlayerID() + ": " + message);
-//		chatConnection.sendMessage(message);
-//		chatTextField.setText("");
-//		
-//		if (message.equalsIgnoreCase("!surrender") && !winner) {
-//			chatArea.append("\n----- You surrendered. Player #" + otherPlayer + " wins! -----");
-//			
-//			clientConnection.closeConnection();
-//			buttonsEnabled = false;
-//			toggleButtons();
-//			
-//			winner = true;
-//		}
-//		
-//		if (message.equalsIgnoreCase("!draw") && !winner) {
-//			if (draw && drawCount > 0) {
-//				chatArea.append("\n----- You already requested a draw. Wait for your opponent -----");
-//			}
-//			
-//			if (!draw && drawCount == 0) {
-//				chatArea.append("\n----- You requested a draw. Wait for your opponent -----");
-//				draw = true;
-//				drawCount++;
-//			}
-//			
-//			if (!draw && drawCount > 0) {
-//				chatArea.append("\n----- GAME OVER! Both players agreed to a draw -----");
-//				
-//				clientConnection.closeConnection();
-//				buttonsEnabled = false;
-//				toggleButtons();
-//				
-//				winner = true;
-//				draw = true;
-//			}
-//		}
-//	}
-	
-//	public void updateChat() {
-//		String message = "";
-//		
-//		while (!message.equalsIgnoreCase("@exit@")) {
-//			message = chatConnection.receiveMessage();
-//			
-//			if (!message.equalsIgnoreCase("@win@")) {
-//				chatArea.append("\nPlayer #" + otherPlayer + ": " + message);	
-//			}
-//						
-//			if (message.equalsIgnoreCase("@win@") && !winner) {
-//				chatArea.append("\n----- Player #" + otherPlayer + " WINS! -----");
-//				
-//				clientConnection.closeConnection();
-//				buttonsEnabled = false;
-//				toggleButtons();
-//				
-//				winner = true;
-//			}
-//			
-//			if (message.equalsIgnoreCase("!surrender") && !winner) {
-//				chatArea.append("\n----- YOU WIN! Player #" + otherPlayer + " surrendered. -----");
-//				
-//				clientConnection.closeConnection();
-//				buttonsEnabled = false;
-//				toggleButtons();
-//				
-//				winner = true;
-//			}
-//			
-//			if (message.equalsIgnoreCase("!draw") && !winner) {
-//				if (draw) {
-//					chatArea.append("\n----- GAME OVER! Both players agreed to a draw -----");
-//					
-//					clientConnection.closeConnection();
-//					buttonsEnabled = false;
-//					toggleButtons();
-//					
-//					winner = true;
-//					draw = true;
-//				}
-//				else {
-//					chatArea.append("\n----- Player #" + otherPlayer + " requested a draw. Send !draw to accept -----");
-//					drawCount++;
-//				}
-//			}
-//		}
-//	}
+	public void sendChatMessage() {
+		String message = chatTextField.getText();
+		
+		chatArea.append("\nPlayer #" + playerID + ": " + message);
+		
+		try {
+			serverInterface.sendMessage(message, playerID);
+		} 
+		catch (Exception e) {
+			System.out.println("Exception - sendChatMessage()");
+		}
+		
+		chatTextField.setText("");
+		
+		if (message.equalsIgnoreCase("!surrender") && !winner) {
+			chatArea.append("\n----- You surrendered. Player #" + otherPlayer + " wins! -----");
+			
+			buttonsEnabled = false;
+			toggleButtons();
+			
+			winner = true;
+		}
+		
+		if (message.equalsIgnoreCase("!draw") && !winner) {
+			if (draw && drawCount > 0) {
+				chatArea.append("\n----- You already requested a draw. Wait for your opponent -----");
+			}
+			
+			if (!draw && drawCount == 0) {
+				chatArea.append("\n----- You requested a draw. Wait for your opponent -----");
+				draw = true;
+				drawCount++;
+			}
+			
+			if (!draw && drawCount > 0) {
+				chatArea.append("\n----- GAME OVER! Both players agreed to a draw -----");
+				
+				buttonsEnabled = false;
+				toggleButtons();
+				
+				winner = true;
+				draw = true;
+			}
+		}
+	}
 	
 	public static void main(String[] args) {
 		new Player();
