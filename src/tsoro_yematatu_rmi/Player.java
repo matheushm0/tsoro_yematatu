@@ -21,6 +21,7 @@ import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultCaret;
 
 public class Player extends JFrame {
@@ -368,6 +369,8 @@ public class Player extends JFrame {
 			if (bNum != -1) {
 				chatArea.append("\n----- Player #" + otherPlayer + " clicked button #" + bNum 
 						+ ". It's your turn. -----");	
+				
+				updateChatPosition();
 			
 				if (enemyPieces < 3) {
 					enemyPoints[enemyPieces] = bNum;			
@@ -467,7 +470,16 @@ public class Player extends JFrame {
 						drawCount++;
 					}
 				}
-			}			
+			}
+			updateChatPosition();
+		}
+	}
+	
+	private void updateChatPosition() {
+		try {
+			chatArea.setCaretPosition(chatArea.getLineStartOffset(chatArea.getLineCount() - 1));
+		} catch (BadLocationException e) {
+			System.out.println("BadLocationException - updateChatPosition()");
 		}
 	}
 
@@ -552,6 +564,7 @@ public class Player extends JFrame {
 				
 				try {
 					serverInterface.sendMessage("@win@", playerID);
+					updateChatPosition();
 				} 
 				catch (Exception e) {
 					System.out.println("Exception - checkWinner()");
@@ -659,6 +672,8 @@ public class Player extends JFrame {
 				draw = true;
 			}
 		}
+		
+		updateChatPosition();
 	}
 	
 	public static void main(String[] args) {
